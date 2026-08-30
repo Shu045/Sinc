@@ -1,1 +1,1 @@
-export const db_url = "asaass";
+export { db } from "./client";
