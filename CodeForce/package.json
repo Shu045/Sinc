@@ -1,0 +1,22 @@
+{
+  "name": "codeforce",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "server": "bun src/server.ts",
+    "server:dev": "bun src/server.ts",
+    "server:inspect": "set DENGEROUSLY_OMIT_AUTH=true && bunx @modelcontextprotocol/inspector bun run server"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/inspector": "^2.4.0",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^7"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^4.5.2"
+  }
+}
