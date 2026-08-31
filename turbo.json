@@ -15,7 +15,9 @@
     },
     "dev": {
       "cache": false,
+      "env": ["DATABASE_URL"],
       "persistent": true
     }
-  }
+  },
+  "globalDotEnv": [".env"]
 }

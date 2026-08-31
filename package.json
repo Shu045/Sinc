@@ -3,6 +3,8 @@
   "private": true,
   "scripts": {
     "dev": "turbo dev",
+    "dev:api": "bun run --watch apps/api/src/index.ts",
+    "dev:mcp": "bun run --watch apps/mcp/src/index.ts",
     "build": "turbo build",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck"

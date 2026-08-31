@@ -25,7 +25,7 @@ export default function Home() {
             </Text>
 
             <Text className="mt-1 text-xs text-zinc-500">
-              Your agents are waiting for you.
+              "Your agents are waiting for you."
             </Text>
           </View>
 
