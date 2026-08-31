@@ -1,189 +1,226 @@
-import { router } from "expo-router";
-import { ScrollView, Text, View } from "react-native";
+import ActivityCard from "@/components/ActivityCard";
+import AgentHeader from "@/components/AgentHeader";
+import QuestionCard from "@/components/QuestionCard";
+import { AgentEvent, getEvents } from "@/services/api/events";
+import { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  Text,
+  View,
+} from "react-native";
 
-import { Card } from "@/components/ui/Card";
-import { StatusDot } from "@/components/ui/StatusDot";
-import { RequestCard } from "@/components/requests/RequestCard";
-import { requests } from "@/data/mock";
+const SESSION_ID = process.env.SESSION_ID || "cmtgyhgck00009zexv8wcfuua";
 
 export default function Home() {
-  const pendingRequests = requests.filter(
-    (request) => request.status === "pending",
-  );
+  const [events, setEvents] = useState<AgentEvent[]>([]);
+
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadEvents = useCallback(async () => {
+    try {
+      setError(null);
+
+      const data = await getEvents(SESSION_ID);
+
+      setEvents(data);
+    } catch (error) {
+      setError(
+        error instanceof Error
+          ? error.message
+          : "Failed to load agent activity.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
+
+    await loadEvents();
+
+    setRefreshing(false);
+  }, [loadEvents]);
+
+  useEffect(() => {
+    loadEvents();
+
+    const interval = setInterval(loadEvents, 3000);
+
+    return () => clearInterval(interval);
+  }, [loadEvents]);
+
+  const latestEvent = events.at(-1);
+
+  const pendingQuestion = [...events]
+    .reverse()
+    .find((event) => event.type === "QUESTION" && !event.data.answered);
+
+  const isActive =
+    latestEvent?.type === "TOOL_CALL" || latestEvent?.type === "MESSAGE";
 
   return (
-    <View className="flex-1 bg-black">
+    <View className="flex-1 bg-[#0A0A0B]">
       <ScrollView
+        className="flex-1"
+        contentContainerClassName="px-5 pb-10 pt-16"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refresh}
+            tintColor="#ffffff"
+          />
+        }
         showsVerticalScrollIndicator={false}
-        contentContainerClassName="px-5 pb-12 pt-16"
       >
-        {/* Header */}
-        <View className="mb-8 flex-row items-start justify-between">
-          <View>
-            <Text className="text-3xl font-bold tracking-tight text-white">
-              sinc
+        <AgentHeader active={isActive} />
+        {/* Error */}
+        {error && (
+          <View className="mt-6 rounded-2xl border border-red-500/20 bg-red-500/[0.06] p-4">
+            <View className="flex-row">
+              <Text className="mr-3 text-base">!</Text>
+
+              <View className="flex-1">
+                <Text className="font-medium text-red-400">
+                  Couldn't connect
+                </Text>
+
+                <Text className="mt-1 text-sm leading-5 text-zinc-500">
+                  {error}
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Current activity */}
+        <View className="mt-8">
+          <View className="mb-3 flex-row items-center justify-between">
+            <Text className="text-[13px] font-medium uppercase tracking-[1.5px] text-zinc-500">
+              Current activity
             </Text>
 
-            <Text className="mt-1 text-xs text-zinc-500">
-              "Your agents are waiting for you."
-            </Text>
+            {isActive && (
+              <View className="flex-row items-center">
+                <View className="mr-2 h-1.5 w-1.5 rounded-full bg-emerald-400" />
+
+                <Text className="text-xs font-medium text-emerald-400">
+                  LIVE
+                </Text>
+              </View>
+            )}
           </View>
 
-          <View className="flex-row items-center gap-2 pt-2">
-            <StatusDot />
-            <Text className="text-xs text-zinc-500">Connected</Text>
+          <View className="rounded-3xl border border-white/[0.07] bg-[#111113] p-5">
+            {loading ? (
+              <View className="items-center py-8">
+                <ActivityIndicator color="#71717A" />
+              </View>
+            ) : latestEvent ? (
+              <>
+                <Text className="text-xl font-semibold leading-7 text-white">
+                  {getEventTitle(latestEvent)}
+                </Text>
+
+                <Text className="mt-2 text-sm leading-6 text-zinc-500">
+                  {getEventDescription(latestEvent)}
+                </Text>
+              </>
+            ) : (
+              <>
+                <Text className="text-xl font-semibold text-white">
+                  Waiting for your agent
+                </Text>
+
+                <Text className="mt-2 text-sm leading-6 text-zinc-500">
+                  Activity from your laptop will appear here.
+                </Text>
+              </>
+            )}
           </View>
         </View>
 
-        {/* Hero */}
-        <Card className="mb-8 rounded-3xl p-5">
-          <View className="flex-row items-center justify-between">
-            <View>
-              <Text className="mb-2 text-[10px] font-bold tracking-[2px] text-zinc-600">
-                SINC MCP
-              </Text>
+        {/* Question */}
+        {pendingQuestion && (
+          <View className="mt-6">
+            <QuestionCard
+              event={pendingQuestion}
+              sessionId={SESSION_ID}
+              onAnswered={loadEvents}
+            />
+          </View>
+        )}
 
-              <Text className="text-2xl font-semibold tracking-tight text-white">
-                {pendingRequests.length === 0
-                  ? "All clear."
-                  : `${pendingRequests.length} thing${
-                      pendingRequests.length === 1 ? "" : "s"
-                    } need you.`}
+        {/* Activity */}
+        <View className="mt-8">
+          <Text className="mb-3 text-[13px] font-medium uppercase tracking-[1.5px] text-zinc-500">
+            Activity
+          </Text>
+
+          {loading ? (
+            <View className="items-center py-10">
+              <ActivityIndicator color="#52525B" />
+            </View>
+          ) : events.length === 0 ? (
+            <View className="rounded-3xl border border-white/[0.06] bg-[#111113] px-5 py-8">
+              <Text className="text-center text-sm text-zinc-600">
+                No activity yet
               </Text>
             </View>
-
-            <View className="h-12 w-12 items-center justify-center rounded-full bg-zinc-800">
-              <View className="h-3 w-3 rounded-full bg-emerald-400" />
+          ) : (
+            <View className="gap-3">
+              {[...events].reverse().map((event) => (
+                <ActivityCard key={event.id} event={event} />
+              ))}
             </View>
-          </View>
-
-          <Text className="mt-4 text-sm leading-5 text-zinc-500">
-            Sinc lets your AI agents reach you when they need a decision,
-            instruction, or permission.
-          </Text>
-
-          <View className="mt-5 flex-row items-center">
-            <StatusDot />
-
-            <Text className="ml-2 text-[11px] text-zinc-600">
-              MCP endpoint is listening
-            </Text>
-          </View>
-        </Card>
-
-        {/* Requests header */}
-        <View className="mb-4 flex-row items-center">
-          <Text className="text-base font-semibold text-zinc-200">
-            Needs your attention
-          </Text>
-
-          <Text className="ml-2 text-xs text-zinc-600">
-            {pendingRequests.length}
-          </Text>
+          )}
         </View>
-
-        {/* Requests */}
-        {pendingRequests.map((request) => (
-          <RequestCard
-            key={request.id}
-            request={request}
-            onPress={() => router.push(`/requests/${request.id}`)}
-          />
-        ))}
-
-        {/* Agents */}
-        <View className="mb-4 mt-8 flex-row items-center justify-between">
-          <Text className="text-base font-semibold text-zinc-200">
-            Connected agents
-          </Text>
-
-          <Text
-            onPress={() => router.push("/agents")}
-            className="text-xs text-zinc-500"
-          >
-            View all
-          </Text>
-        </View>
-
-        <Card className="p-4">
-          <View className="flex-row items-center">
-            <View className="mr-3 h-10 w-10 items-center justify-center rounded-xl bg-zinc-800">
-              <Text className="font-semibold text-zinc-200">C</Text>
-            </View>
-
-            <View className="flex-1">
-              <Text className="text-sm font-semibold text-zinc-200">
-                Claude Code
-              </Text>
-
-              <Text className="mt-1 text-xs text-zinc-600">
-                Last activity just now
-              </Text>
-            </View>
-
-            <StatusDot />
-          </View>
-        </Card>
-
-        {/* MCP explanation */}
-        <Text className="mb-4 mt-8 text-base font-semibold text-zinc-200">
-          The Sinc workflow
-        </Text>
-
-        <Card className="p-5">
-          <WorkflowStep
-            number="01"
-            title="Agent gets stuck"
-            description="Your agent needs information or permission."
-          />
-
-          <WorkflowLine />
-
-          <WorkflowStep
-            number="02"
-            title="Sinc notifies you"
-            description="The Sinc MCP sends the request to your device."
-          />
-
-          <WorkflowLine />
-
-          <WorkflowStep
-            number="03"
-            title="You respond"
-            description="Your response goes straight back to the agent."
-          />
-        </Card>
       </ScrollView>
     </View>
   );
 }
 
-function WorkflowStep({
-  number,
-  title,
-  description,
-}: {
-  number: string;
-  title: string;
-  description: string;
-}) {
-  return (
-    <View className="flex-row items-center">
-      <View className="mr-4 h-9 w-9 items-center justify-center rounded-lg bg-zinc-800">
-        <Text className="text-[10px] font-bold text-zinc-500">{number}</Text>
-      </View>
+function getEventTitle(event: AgentEvent) {
+  switch (event.type) {
+    case "MESSAGE":
+      return String(event.data.text ?? "Agent sent a message");
 
-      <View className="flex-1">
-        <Text className="text-sm font-semibold text-zinc-200">{title}</Text>
+    case "TOOL_CALL":
+      return `Using ${String(event.data.tool ?? "a tool")}`;
 
-        <Text className="mt-1 text-xs leading-4 text-zinc-600">
-          {description}
-        </Text>
-      </View>
-    </View>
-  );
+    case "TOOL_RESULT":
+      return "Tool completed";
+
+    case "QUESTION":
+      return String(event.data.question ?? "The agent needs your input");
+
+    case "ERROR":
+      return "Something went wrong";
+
+    default:
+      return "Agent activity";
+  }
 }
 
-function WorkflowLine() {
-  return <View className="ml-[17px] h-6 w-px bg-zinc-800" />;
+function getEventDescription(event: AgentEvent) {
+  switch (event.type) {
+    case "TOOL_CALL":
+      return "Your agent is working on your laptop.";
+
+    case "TOOL_RESULT":
+      return "The agent finished using a tool.";
+
+    case "QUESTION":
+      return "Your agent is waiting for your response.";
+
+    case "ERROR":
+      return String(event.data.message ?? "An error occurred.");
+
+    default:
+      return "Your agent is currently working.";
+  }
 }

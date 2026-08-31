@@ -1,16 +1,20 @@
 import { Hono } from "hono";
-import workflows from "./routes/workflows";
-import runs from "./routes/run";
+
+import agents from "./routes/agents";
+import sessions from "./routes/sessions";
+import events from "./routes/events";
 
 const app = new Hono();
 
-app.get("/health", async (c) => {
+app.get("/", (c) => {
   return c.json({
+    name: "sinc-api",
     status: "ok",
   });
 });
 
-app.route("/api/workflows", workflows);
-app.route("/api/runs", runs);
+app.route("/api/agents", agents);
+app.route("/api/agents", sessions);
+app.route("/api/sessions", events);
 
 export default app;

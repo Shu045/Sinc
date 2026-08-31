@@ -7,69 +7,47 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  workflows Workflow[]
-}
-
-model Workflow {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  enabled     Boolean  @default(true)
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  steps WorkflowStep[]
-  runs  WorkflowRun[]
+model Agent {
+  id   String @id @default(cuid())
+  name String @default("My Agent")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([userId])
+  sessions AgentSession[]
 }
 
-model WorkflowStep {
-  id         String   @id @default(cuid())
-  name       String
-  type       String
-  config     Json
-  order      Int
+model AgentSession {
+  id String @id @default(cuid())
 
-  workflowId String
-  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  agentId String
+  agent   Agent  @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  events AgentEvent[]
+
+  createdAt DateTime  @default(now())
+  endedAt   DateTime?
+}
+
+model AgentEvent {
+  id String @id @default(cuid())
+
+  sessionId String
+  session   AgentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  type AgentEventType
+  data Json
 
   createdAt DateTime @default(now())
 
-  @@unique([workflowId, order])
-  @@index([workflowId])
+  @@index([sessionId, createdAt])
 }
 
-model WorkflowRun {
-  id         String    @id @default(cuid())
-  status     RunStatus @default(PENDING)
-  input      Json?
-  output     Json?
-  error      String?
-
-  workflowId String
-  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-
-  startedAt  DateTime?
-  finishedAt DateTime?
-  createdAt  DateTime  @default(now())
-
-  @@index([workflowId])
-}
-
-enum RunStatus {
-  PENDING
-  RUNNING
-  COMPLETED
-  FAILED
+enum AgentEventType {
+  MESSAGE
+  TOOL_CALL
+  TOOL_RESULT
+  QUESTION
+  APPROVAL
+  ERROR
 }

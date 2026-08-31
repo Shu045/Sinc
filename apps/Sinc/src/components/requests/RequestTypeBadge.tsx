@@ -22,11 +22,7 @@ const config: Record<
   },
 };
 
-export function RequestTypeBadge({
-  type,
-}: {
-  type: RequestType;
-}) {
+export function RequestTypeBadge({ type }: { type: RequestType }) {
   const item = config[type];
 
   return (

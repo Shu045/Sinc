@@ -23,9 +23,7 @@ export default function Agents() {
           <AgentCard
             key={agent.id}
             agent={agent}
-            onPress={() =>
-              router.push(`/agents/${agent.id}`)
-            }
+            onPress={() => router.push(`/agents/${agent.id}`)}
           />
         ))}
       </ScrollView>

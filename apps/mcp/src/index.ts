@@ -8,7 +8,7 @@ const app = new Hono();
 
 app.get("/", (c) => {
   return c.json({
-    name: "sinc-workflows",
+    name: "sinc",
     status: "ok",
   });
 });
@@ -25,7 +25,11 @@ app.all("/mcp", async (c) => {
   return transport.handleRequest(c.req.raw);
 });
 
+const port = Number(process.env.PORT ?? 4000);
+
+console.log(`Sinc MCP running on http://localhost:${port}`);
+
 export default {
-  port: 4000,
+  port,
   fetch: app.fetch,
 };

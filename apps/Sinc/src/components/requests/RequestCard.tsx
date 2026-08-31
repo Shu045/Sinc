@@ -9,10 +9,7 @@ type Props = {
 
 export function RequestCard({ request, onPress }: Props) {
   return (
-    <Pressable
-      onPress={onPress}
-      className="mb-3 active:opacity-70"
-    >
+    <Pressable onPress={onPress} className="mb-3 active:opacity-70">
       <View className="flex-row items-center rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
         {/* Agent icon */}
         <View className="mr-3 h-11 w-11 items-center justify-center rounded-xl bg-zinc-800">
@@ -37,10 +34,7 @@ export function RequestCard({ request, onPress }: Props) {
             {request.title}
           </Text>
 
-          <Text
-            numberOfLines={2}
-            className="text-xs leading-5 text-zinc-500"
-          >
+          <Text numberOfLines={2} className="text-xs leading-5 text-zinc-500">
             {request.message}
           </Text>
 
