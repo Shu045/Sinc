@@ -11,7 +11,7 @@ import {
   View,
 } from "react-native";
 
-const SESSION_ID = process.env.SESSION_ID || "cmtgyhgck00009zexv8wcfuua";
+const SESSION_ID = "cmtien2fw0000flex0i2y9umd";
 
 export default function Home() {
   const [events, setEvents] = useState<AgentEvent[]>([]);
